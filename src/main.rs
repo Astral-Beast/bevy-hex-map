@@ -65,22 +65,22 @@ fn setup(
     });
 
     
-    let triangle: PlaneMeshBuilder = Plane3d::from_points(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 1.0)).0.mesh().normal(Direction3d::Y);
+
     let shape = meshes.add(create_hex_mesh());
-    //8.0+(x as f32 - 5.0 + (z as f32 * 0.5) - (z as f32 / 2.0)) * (HEX_INNER_RADIUS * 2.0)
-    //8.0+(z as f32 - 5.0) * HEX_OUTER_RADIUS * 1.5
-    for z in -2..2{
-        for x in -2..2 {
-            let position = vec3(x as f32 *  HEX_OUTER_RADIUS, 
+
+    
+    for z in -10..10{
+        for x in -10..10 {
+
+            let position = vec3((x as f32 + z as f32 * 0.5 - (z /2) as f32) * (HEX_INNER_RADIUS * 2.0), 
                                 0.0,
-                                z as f32 * HEX_OUTER_RADIUS);
-            println!("Position: {}, x: {}, z: {}, {}, {}", position, x, z, (x as f32 - 5.0 + (z as f32 * 0.5) - (z / 2) as f32) * (HEX_INNER_RADIUS * 2.0), (z as f32 - 5.0) * HEX_OUTER_RADIUS * 1.5, );
+                                z as f32 * HEX_OUTER_RADIUS * 1.5);
+            println!("x {} z {}, position {}", x,z, position);
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
                     material: debug_material.clone(),
-                    transform: Transform::default()
-                    .with_translation(position)
+                    transform: Transform::from_xyz(position.x, position.y, position.z)
                     .with_rotation(Quat::from_rotation_x(0.0)),
                     ..default()
                 },
