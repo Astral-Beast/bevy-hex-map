@@ -1,12 +1,11 @@
 use bevy::{
     math::{vec2, vec3}, prelude::*, render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
-        settings::*,
-        RenderPlugin
-
-    }
+        mesh::PlaneMeshBuilder, render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat}, settings::*, RenderPlugin
+        
+    }, scene::ron::value::Float,
+    
 };
+use bevy::math::primitives::Plane3d;
 //use std::f32::consts::PI;
 
 fn main() {
@@ -51,6 +50,10 @@ struct Hex {
     pub position: Vec3,
     pub index: Vec3,
 }
+// HEX Const values
+pub const HEX_OUTER_RADIUS: f32 = 2.0;
+pub const HEX_INNER_RADIUS: f32 = HEX_OUTER_RADIUS * 0.866025404;
+
 
 fn setup(
     mut commands: Commands,
@@ -63,31 +66,32 @@ fn setup(
         ..default()
     });
 
-    let shapes = [
-        meshes.add(Plane3d::default()),
-
-
-    ];
-
-    for (i, shape) in shapes.into_iter().enumerate() {
-        commands.spawn((
-            PbrBundle {
-                mesh: shape,
-                material: debug_material.clone(),
-                transform: Transform::from_xyz(
-                    0.0,
-                    2.0,
-                    0.0,
-                )
-                .with_rotation(Quat::from_rotation_x(0.0)),
-                ..default()
-            },
-            Hex{
-                position: {Vec3::splat(0.0)},
-                index: {Vec3::splat(0.0)}
-            },
-        ));
+    let shape = meshes.add(PlaneMeshBuilder::new(Direction3d::Y, vec2(HEX_OUTER_RADIUS, HEX_OUTER_RADIUS)));
+    //8.0+(x as f32 - 5.0 + (z as f32 * 0.5) - (z as f32 / 2.0)) * (HEX_INNER_RADIUS * 2.0)
+    //8.0+(z as f32 - 5.0) * HEX_OUTER_RADIUS * 1.5
+    for z in -2..2{
+        for x in -2..2 {
+            let position = vec3(x as f32 *  HEX_OUTER_RADIUS, 
+                                0.0,
+                                z as f32 * HEX_OUTER_RADIUS);
+            println!("Position: {}, x: {}, z: {}, {}, {}", position, x, z, (x as f32 - 5.0 + (z as f32 * 0.5) - (z / 2) as f32) * (HEX_INNER_RADIUS * 2.0), (z as f32 - 5.0) * HEX_OUTER_RADIUS * 1.5, );
+            commands.spawn((
+                PbrBundle {
+                    mesh: shape.clone(),
+                    material: debug_material.clone(),
+                    transform: Transform::default()
+                    .with_translation(position)
+                    .with_rotation(Quat::from_rotation_x(0.0)),
+                    ..default()
+                },
+                Hex{
+                    position: {position},
+                    index: {vec3(x as f32, 0.0, z as f32)}
+                },
+            ));
+        }
     }
+
 
     commands.spawn(PointLightBundle {
         point_light: PointLight {
