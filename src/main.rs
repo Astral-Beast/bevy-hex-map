@@ -1,16 +1,14 @@
 use bevy::{
     math::{vec2, vec3}, prelude::*, render::{
-        mesh::PlaneMeshBuilder, render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat}, settings::*, RenderPlugin
-        
+        mesh::{PlaneMeshBuilder,Indices}, render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat, PrimitiveTopology}, settings::*, RenderPlugin
     }, scene::ron::value::Float,
-    
 };
 use bevy::math::primitives::Plane3d;
 //use std::f32::consts::PI;
 
 fn main() {
     App::new()
-        .add_plugins(MyRenderPlugin)
+        .add_plugins((MyRenderPlugin))
         .add_systems(Startup, setup)
         //.add_systems(Update, rotate)
         .run();
@@ -66,7 +64,9 @@ fn setup(
         ..default()
     });
 
-    let shape = meshes.add(PlaneMeshBuilder::new(Direction3d::Y, vec2(HEX_OUTER_RADIUS, HEX_OUTER_RADIUS)));
+    
+    let triangle: PlaneMeshBuilder = Plane3d::from_points(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 1.0)).0.mesh().normal(Direction3d::Y);
+    let shape = meshes.add(create_hex_mesh());
     //8.0+(x as f32 - 5.0 + (z as f32 * 0.5) - (z as f32 / 2.0)) * (HEX_INNER_RADIUS * 2.0)
     //8.0+(z as f32 - 5.0) * HEX_OUTER_RADIUS * 1.5
     for z in -2..2{
@@ -88,6 +88,7 @@ fn setup(
                     position: {position},
                     index: {vec3(x as f32, 0.0, z as f32)}
                 },
+                
             ));
         }
     }
@@ -108,6 +109,33 @@ fn setup(
         transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
         ..default()
     });
+}
+
+fn create_hex_mesh() -> Mesh{
+    Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+                //Mesh vertices
+        vec![[0.0,0.0,0.0],
+                    [1.0,0.0,0.0],
+                    [0.0,0.0,1.0]]
+                
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        vec![
+            // Assigning the UV coords for the top side.
+            [0.0,1.0], [0.0, 0.0], [1.0, 0.0]],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        vec![
+            // Normals for the top side (towards +y)
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],])
+    .with_inserted_indices(Indices::U32(vec![
+        1,0,2])) // triangles making up the top (+y) facing side.
 }
 
 
