@@ -1,12 +1,7 @@
 use bevy::{
-    math::{vec2, vec3}, prelude::*, render::{
-        mesh::{PlaneMeshBuilder,Indices}, 
-        render_asset::RenderAssetUsages, 
-        render_resource::{Extent3d,TextureDescriptor, TextureDimension, TextureFormat, PrimitiveTopology,TextureUsages}, 
-        settings::*, 
-        RenderPlugin,
-        camera::RenderTarget,
-    }, 
+    log::tracing_subscriber::fmt::format, math::{vec2, vec3}, prelude::*, render::{
+        camera::RenderTarget, mesh::{Indices, PlaneMeshBuilder}, render_asset::RenderAssetUsages, render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, settings::*, RenderPlugin
+    } 
 };
 fn main() {
     App::new()
@@ -75,76 +70,51 @@ fn setup(
 
     let shape = meshes.add(create_hex_mesh());
 
-    let mut image = Image {
-        texture_descriptor: TextureDescriptor {
-            label: None,
-            size,
-            dimension: TextureDimension::D2,
-            format: TextureFormat::Bgra8UnormSrgb,
-            mip_level_count: 1,
-            sample_count: 1,
-            usage: TextureUsages::TEXTURE_BINDING
-                | TextureUsages::COPY_DST
-                | TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[],
-        },
-        ..default()
-    };
-    // fill image.data with zeroes
-    image.resize(size);
 
-    let image_handle = images.add(image);
-    let texture_camera = commands
-    .spawn(Camera2dBundle {
-        camera: Camera {
-            // render before the "main pass" camera
-            order: -1,
-            target: RenderTarget::Image(image_handle.clone()),
-            ..default()
-        },
-        ..default()
-    })
-    .id();
-    commands
-    .spawn((
-        NodeBundle {
-            style: Style {
-                // Cover the whole image
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            background_color: Color::GOLD.into(),
-            ..default()
-        },
-    TargetCamera(texture_camera),
-    ))
-    .with_children(|parent| {
-        parent.spawn(TextBundle::from_section(
-            "This is a cube",
-            TextStyle {
-                font_size: 40.0,
-                color: Color::BLACK,
-                ..default()
-            },
-        ));
-    });
-    let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(image_handle),
-        reflectance: 0.02,
-        unlit: false,
-        ..default()
-    });
-
+    
     for z in -10..10{
         for x in -10..10 {
-
+            let mut image = Image {
+                texture_descriptor: TextureDescriptor {
+                    label: None,
+                    size,
+                    dimension: TextureDimension::D2,
+                    format: TextureFormat::Bgra8UnormSrgb,
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    usage: TextureUsages::TEXTURE_BINDING
+                        | TextureUsages::COPY_DST
+                        | TextureUsages::RENDER_ATTACHMENT,
+                    view_formats: &[],
+                },
+                ..default()
+            };
+            // fill image.data with zeroes
+            image.resize(size);
+        
+            let image_handle = images.add(image);
+            let texture_camera = commands
+            .spawn(Camera2dBundle {
+                camera: Camera {
+                    // render before the "main pass" camera
+                    order: -1,
+                    target: RenderTarget::Image(image_handle.clone()),
+                    ..default()
+                },
+                ..default()
+            })
+            .id();
+            
+            let material_handle = materials.add(StandardMaterial {
+                base_color_texture: Some(image_handle),
+                reflectance: 0.02,
+                unlit: false,
+                ..default()
+            });
             let position = vec3((x as f32 + z as f32 * 0.5 - (z /2) as f32) * (HEX_INNER_RADIUS * 2.0), 
                                 0.0,
                                 z as f32 * HEX_OUTER_RADIUS * 1.5);
+            let index = vec3(x as f32, (-x - z) as f32, z as f32);
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
@@ -155,11 +125,37 @@ fn setup(
                 },
                 Hex{
                     position: {position},
-                    index: {vec3(x as f32, 0.0, z as f32)},
+                    index: {index},
                     color: Color::SILVER,
                 },
                 
             ));
+            commands.spawn((
+                NodeBundle {
+                    style: Style {
+                        // Cover the whole image
+                        width: Val::Percent(100.),
+                        height: Val::Percent(100.),
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    background_color: Color::GOLD.into(),
+                    ..default()
+                },
+            TargetCamera(texture_camera),
+            ))
+            .with_children(|parent| {
+                parent.spawn(TextBundle::from_section(
+                    format!("Index\nX: {}\nY: {}\nZ: {}", index.x, index.y, index.z),
+                    TextStyle {
+                        font_size: 40.0,
+                        color: Color::BLACK,
+                        ..default()
+                    },
+                ));
+            });
         }
     }
     commands.spawn(PointLightBundle {
