@@ -88,7 +88,15 @@ fn setup(
             ));
         }
     }
-
+    let plane_ =  meshes.add(Plane3d::default());
+    commands.spawn((
+        PbrBundle {
+            mesh: plane_,
+            material: debug_material.clone(),
+            transform: Transform::from_xyz(0.0,10.0,-10.0)
+            .with_rotation(Quat::from_rotation_x(0.0)),
+            ..default()
+        },));
 
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -102,7 +110,7 @@ fn setup(
     });
 
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 100., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 40., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         ..default()
     });
 }
@@ -125,13 +133,13 @@ fn setup(
                 Mesh::ATTRIBUTE_UV_0,
                 vec![
                     // Assigning the UV coords for the top side.
-                    [0.0,0.0], 
-                    [0.0, 1.0], 
-                    [0.8 , 0.0], 
-                    [-1.0,0.0],
-                    [0.0,1.0],
-                    [0.0,1.0], 
-                    [1.0,1.0],
+                    [0.5,0.5], 
+                    [0.0, 0.5], 
+                    [0.3749889 , 0.0], 
+                    [0.74,0.0],
+                    [1.0,0.5],
+                    [0.74,1.0], 
+                    [0.3749,1.0],
                         ]
                     
             )
