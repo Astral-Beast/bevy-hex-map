@@ -1,16 +1,11 @@
 use bevy::{
     math::{vec2, vec3}, prelude::*, render::{
-        mesh::PlaneMeshBuilder, render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat}, settings::*, RenderPlugin
-        
-    }, scene::ron::value::Float,
-    
+        mesh::{PlaneMeshBuilder,Indices}, render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat, PrimitiveTopology}, settings::*, RenderPlugin
+    }, 
 };
-use bevy::math::primitives::Plane3d;
-//use std::f32::consts::PI;
-
 fn main() {
     App::new()
-        .add_plugins(MyRenderPlugin)
+        .add_plugins((MyRenderPlugin))
         .add_systems(Startup, setup)
         //.add_systems(Update, rotate)
         .run();
@@ -66,21 +61,22 @@ fn setup(
         ..default()
     });
 
-    let shape = meshes.add(PlaneMeshBuilder::new(Direction3d::Y, vec2(HEX_OUTER_RADIUS, HEX_OUTER_RADIUS)));
-    //8.0+(x as f32 - 5.0 + (z as f32 * 0.5) - (z as f32 / 2.0)) * (HEX_INNER_RADIUS * 2.0)
-    //8.0+(z as f32 - 5.0) * HEX_OUTER_RADIUS * 1.5
-    for z in -2..2{
-        for x in -2..2 {
-            let position = vec3(x as f32 *  HEX_OUTER_RADIUS, 
+    
+
+    let shape = meshes.add(create_hex_mesh());
+
+    
+    for z in -10..10{
+        for x in -10..10 {
+
+            let position = vec3((x as f32 + z as f32 * 0.5 - (z /2) as f32) * (HEX_INNER_RADIUS * 2.0), 
                                 0.0,
-                                z as f32 * HEX_OUTER_RADIUS);
-            println!("Position: {}, x: {}, z: {}, {}, {}", position, x, z, (x as f32 - 5.0 + (z as f32 * 0.5) - (z / 2) as f32) * (HEX_INNER_RADIUS * 2.0), (z as f32 - 5.0) * HEX_OUTER_RADIUS * 1.5, );
+                                z as f32 * HEX_OUTER_RADIUS * 1.5);
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
                     material: debug_material.clone(),
-                    transform: Transform::default()
-                    .with_translation(position)
+                    transform: Transform::from_xyz(position.x, position.y, position.z)
                     .with_rotation(Quat::from_rotation_x(0.0)),
                     ..default()
                 },
@@ -88,6 +84,7 @@ fn setup(
                     position: {position},
                     index: {vec3(x as f32, 0.0, z as f32)}
                 },
+                
             ));
         }
     }
@@ -105,10 +102,60 @@ fn setup(
     });
 
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 100., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         ..default()
     });
 }
+
+        fn create_hex_mesh() -> Mesh{
+            Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
+            .with_inserted_attribute(
+                Mesh::ATTRIBUTE_POSITION,
+                        //Mesh vertices
+                vec![[0.0,0.0,0.0],
+                            [0.0,0.0,HEX_OUTER_RADIUS],
+                            [HEX_INNER_RADIUS,0.0,0.5 * HEX_OUTER_RADIUS],
+                            [HEX_INNER_RADIUS,0.0,-0.5*HEX_OUTER_RADIUS],
+                            [0.0,0.0,-HEX_OUTER_RADIUS],
+                            [-HEX_INNER_RADIUS, 0.0, -0.5*HEX_OUTER_RADIUS],
+                            [-HEX_INNER_RADIUS, 0.0, 0.5*HEX_OUTER_RADIUS],
+                            ]
+            )
+            .with_inserted_attribute(
+                Mesh::ATTRIBUTE_UV_0,
+                vec![
+                    // Assigning the UV coords for the top side.
+                    [0.0,0.0], 
+                    [0.0, 1.0], 
+                    [0.8 , 0.0], 
+                    [-1.0,0.0],
+                    [0.0,1.0],
+                    [0.0,1.0], 
+                    [1.0,1.0],
+                        ]
+                    
+            )
+            .with_inserted_attribute(
+                Mesh::ATTRIBUTE_NORMAL,
+                vec![
+                    // Normals for the top side (towards +y)
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],])
+            .with_inserted_indices(Indices::U32(vec![
+                0,1,2,
+                0,2,3,
+                0,3,4,
+                0,4,5,
+                0,5,6,
+                0,6,1,
+                ])) // triangles making up the top (+y) facing side.
+        }
+        
 
 
 fn uv_debug_texture() -> Image {
