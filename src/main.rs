@@ -75,7 +75,6 @@ fn setup(
             let position = vec3((x as f32 + z as f32 * 0.5 - (z /2) as f32) * (HEX_INNER_RADIUS * 2.0), 
                                 0.0,
                                 z as f32 * HEX_OUTER_RADIUS * 1.5);
-            println!("x {} z {}, position {}", x,z, position);
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
@@ -106,37 +105,55 @@ fn setup(
     });
 
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 100., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         ..default()
     });
 }
 
-fn create_hex_mesh() -> Mesh{
-    Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
-    .with_inserted_attribute(
-        Mesh::ATTRIBUTE_POSITION,
-                //Mesh vertices
-        vec![[0.0,0.0,0.0],
-                    [1.0,0.0,0.0],
-                    [0.0,0.0,1.0]]
-                
-    )
-    .with_inserted_attribute(
-        Mesh::ATTRIBUTE_UV_0,
-        vec![
-            // Assigning the UV coords for the top side.
-            [0.0,1.0], [0.0, 0.0], [1.0, 0.0]],
-    )
-    .with_inserted_attribute(
-        Mesh::ATTRIBUTE_NORMAL,
-        vec![
-            // Normals for the top side (towards +y)
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],])
-    .with_inserted_indices(Indices::U32(vec![
-        1,0,2])) // triangles making up the top (+y) facing side.
-}
+        fn create_hex_mesh() -> Mesh{
+            Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
+            .with_inserted_attribute(
+                Mesh::ATTRIBUTE_POSITION,
+                        //Mesh vertices
+                vec![[0.0,0.0,0.0],
+                            [0.0,0.0,HEX_OUTER_RADIUS],
+                            [HEX_INNER_RADIUS,0.0,0.5 * HEX_OUTER_RADIUS],
+                            [HEX_INNER_RADIUS,0.0,-0.5*HEX_OUTER_RADIUS],
+                            [0.0,0.0,-HEX_OUTER_RADIUS],
+                            [-HEX_INNER_RADIUS, 0.0, -0.5*HEX_OUTER_RADIUS],
+                            [-HEX_INNER_RADIUS, 0.0, 0.5*HEX_OUTER_RADIUS],
+                            ]
+                        
+            )
+            .with_inserted_attribute(
+                Mesh::ATTRIBUTE_UV_0,
+                vec![
+                    // Assigning the UV coords for the top side.
+                    [0.0,0.0], [0.0, 0.0], [1.0 , 0.0], [-1.0,0.0],[0.0,1.0],[0.0,1.0], [1.0,1.0],[1.0,1.0]]
+                    
+            )
+            .with_inserted_attribute(
+                Mesh::ATTRIBUTE_NORMAL,
+                vec![
+                    // Normals for the top side (towards +y)
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],])
+            .with_inserted_indices(Indices::U32(vec![
+                0,1,2,
+                0,2,3,
+                0,3,4,
+                0,4,5,
+                0,5,6,
+                0,6,1,
+                ])) // triangles making up the top (+y) facing side.
+        }
+        
 
 
 fn uv_debug_texture() -> Image {
