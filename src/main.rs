@@ -1,11 +1,8 @@
 use bevy::{
     math::{vec2, vec3}, prelude::*, render::{
         mesh::{PlaneMeshBuilder,Indices}, render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat, PrimitiveTopology}, settings::*, RenderPlugin
-    }, scene::ron::value::Float,
+    }, 
 };
-use bevy::math::primitives::Plane3d;
-//use std::f32::consts::PI;
-
 fn main() {
     App::new()
         .add_plugins((MyRenderPlugin))
@@ -123,20 +120,25 @@ fn setup(
                             [-HEX_INNER_RADIUS, 0.0, -0.5*HEX_OUTER_RADIUS],
                             [-HEX_INNER_RADIUS, 0.0, 0.5*HEX_OUTER_RADIUS],
                             ]
-                        
             )
             .with_inserted_attribute(
                 Mesh::ATTRIBUTE_UV_0,
                 vec![
                     // Assigning the UV coords for the top side.
-                    [0.0,0.0], [0.0, 0.0], [1.0 , 0.0], [-1.0,0.0],[0.0,1.0],[0.0,1.0], [1.0,1.0],[1.0,1.0]]
+                    [0.0,0.0], 
+                    [0.0, 1.0], 
+                    [0.8 , 0.0], 
+                    [-1.0,0.0],
+                    [0.0,1.0],
+                    [0.0,1.0], 
+                    [1.0,1.0],
+                        ]
                     
             )
             .with_inserted_attribute(
                 Mesh::ATTRIBUTE_NORMAL,
                 vec![
                     // Normals for the top side (towards +y)
-                    [0.0, 1.0, 0.0],
                     [0.0, 1.0, 0.0],
                     [0.0, 1.0, 0.0],
                     [0.0, 1.0, 0.0],
