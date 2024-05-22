@@ -1,6 +1,11 @@
 use bevy::{
     math::{vec2, vec3}, prelude::*, render::{
-        mesh::{PlaneMeshBuilder,Indices}, render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat, PrimitiveTopology}, settings::*, RenderPlugin
+        mesh::{PlaneMeshBuilder,Indices}, 
+        render_asset::RenderAssetUsages, 
+        render_resource::{Extent3d,TextureDescriptor, TextureDimension, TextureFormat, PrimitiveTopology,TextureUsages}, 
+        settings::*, 
+        RenderPlugin,
+        camera::RenderTarget,
     }, 
 };
 fn main() {
@@ -44,6 +49,7 @@ impl Plugin for MyRenderPlugin {
 struct Hex {
     pub position: Vec3,
     pub index: Vec3,
+    pub color: Color,
 }
 // HEX Const values
 pub const HEX_OUTER_RADIUS: f32 = 2.0;
@@ -61,11 +67,78 @@ fn setup(
         ..default()
     });
 
-    
+    let size = Extent3d {
+        width: 512,
+        height: 512,
+        ..default()
+    };
 
     let shape = meshes.add(create_hex_mesh());
 
-    
+    let mut image = Image {
+        texture_descriptor: TextureDescriptor {
+            label: None,
+            size,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Bgra8UnormSrgb,
+            mip_level_count: 1,
+            sample_count: 1,
+            usage: TextureUsages::TEXTURE_BINDING
+                | TextureUsages::COPY_DST
+                | TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        },
+        ..default()
+    };
+    // fill image.data with zeroes
+    image.resize(size);
+
+    let image_handle = images.add(image);
+    let texture_camera = commands
+    .spawn(Camera2dBundle {
+        camera: Camera {
+            // render before the "main pass" camera
+            order: -1,
+            target: RenderTarget::Image(image_handle.clone()),
+            ..default()
+        },
+        ..default()
+    })
+    .id();
+    commands
+    .spawn((
+        NodeBundle {
+            style: Style {
+                // Cover the whole image
+                width: Val::Percent(100.),
+                height: Val::Percent(100.),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            background_color: Color::GOLD.into(),
+            ..default()
+        },
+    TargetCamera(texture_camera),
+    ))
+    .with_children(|parent| {
+        parent.spawn(TextBundle::from_section(
+            "This is a cube",
+            TextStyle {
+                font_size: 40.0,
+                color: Color::BLACK,
+                ..default()
+            },
+        ));
+    });
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(image_handle),
+        reflectance: 0.02,
+        unlit: false,
+        ..default()
+    });
+
     for z in -10..10{
         for x in -10..10 {
 
@@ -75,29 +148,20 @@ fn setup(
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
-                    material: debug_material.clone(),
+                    material: material_handle.clone(),
                     transform: Transform::from_xyz(position.x, position.y, position.z)
                     .with_rotation(Quat::from_rotation_x(0.0)),
                     ..default()
                 },
                 Hex{
                     position: {position},
-                    index: {vec3(x as f32, 0.0, z as f32)}
+                    index: {vec3(x as f32, 0.0, z as f32)},
+                    color: Color::SILVER,
                 },
                 
             ));
         }
     }
-    let plane_ =  meshes.add(Plane3d::default());
-    commands.spawn((
-        PbrBundle {
-            mesh: plane_,
-            material: debug_material.clone(),
-            transform: Transform::from_xyz(0.0,10.0,-10.0)
-            .with_rotation(Quat::from_rotation_x(0.0)),
-            ..default()
-        },));
-
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             shadows_enabled: true,
@@ -110,7 +174,7 @@ fn setup(
     });
 
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 40., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 20., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         ..default()
     });
 }
