@@ -1,11 +1,7 @@
 use std::f32::consts::PI;
-
+use rand::prelude::*;
 use bevy::{
-    ecs::bundle,
-    log::tracing_subscriber::fmt::format,
-    math::{vec2, vec3},
-    prelude::*,
-    render::{
+    ecs::bundle, input::mouse::MouseButtonInput, log::tracing_subscriber::fmt::format, math::{vec2, vec3}, prelude::*, render::{
         camera::RenderTarget,
         mesh::{Indices, PlaneMeshBuilder},
         render_asset::RenderAssetUsages,
@@ -15,13 +11,13 @@ use bevy::{
         },
         settings::*,
         RenderPlugin,
-    },
-    ui::node_bundles,
+    }, ui::node_bundles
 };
 fn main() {
     App::new()
         .add_plugins((MyRenderPlugin))
         .add_systems(Startup, setup)
+        .add_systems(Update, picker_system)
         //.add_systems(Update, rotate)
         .run();
 }
@@ -52,12 +48,31 @@ impl Plugin for MyRenderPlugin {
     }
 }
 
+fn picker_system(
+    buttons: Res<ButtonInput<MouseButton>>,
+) {
+    if buttons.just_pressed(MouseButton::Left) {
+        print!("left button pressed")
+    }
+}
+
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
 struct Hex {
     pub position: Vec3,
     pub index: Vec3,
-    pub color: Color,
+    pub biome: Biome
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Component)]
+pub enum Biome {
+    Grassland,
+    Forest,
+    Ocean,
+    Sand,
+    Desert,
+    Mountain,
+    Empty,
 }
 // HEX Const values
 pub const HEX_OUTER_RADIUS: f32 = 2.0;
@@ -73,12 +88,7 @@ fn setup(
         base_color_texture: Some(images.add(uv_debug_texture())),
         ..default()
     });
-
-    let size = Extent3d {
-        width: 512,
-        height: 512,
-        ..default()
-    };
+    let mut rng = rand::thread_rng();
 
     let shape = meshes.add(create_hex_mesh());
 
@@ -90,10 +100,11 @@ fn setup(
                 z as f32 * HEX_OUTER_RADIUS * 1.5,
             );
             let index = vec3(x as f32, (-x - z) as f32, z as f32);
+            let new_biome = generate_biome(&mut rng);
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
-                    material: debug_material.clone(),
+                    material: materials.add(new_biome.get_biome_material()),
                     transform: Transform::from_xyz(position.x, position.y, position.z)
                         .with_rotation(Quat::from_rotation_x(0.0)),
                     ..default()
@@ -101,33 +112,17 @@ fn setup(
                 Hex {
                     position: { position },
                     index: { index },
-                    color: Color::SILVER,
+                    biome: new_biome,
                 },
             ));
-
-            commands.spawn(
-                PbrBundle {
-                    mesh: meshes.add(Cuboid::new(HEX_INNER_RADIUS, 0.1, HEX_INNER_RADIUS)),
-                    material: debug_material.clone(),
-                    ..default()
-
-                }
-            );
         }
     }
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            shadows_enabled: true,
-            intensity: 10_000_000.,
-            range: 100.0,
-            ..default()
-        },
-        transform: Transform::from_xyz(8.0, 16.0, 8.0),
-        ..default()
+    commands.insert_resource(AmbientLight{
+        color: Color::WHITE,
+        brightness: 2200.0,
     });
-
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 20., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 30., 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         ..default()
     });
 }
@@ -209,4 +204,31 @@ fn uv_debug_texture() -> Image {
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::RENDER_WORLD,
     )
+}
+
+fn generate_biome<R: Rng + ?Sized>(rng: &mut R) -> Biome {
+    match rng.gen_range(0..6) {
+        // rand 0.8
+        0 => Biome::Grassland,
+        1 => Biome::Forest,
+        2 => Biome::Ocean,
+        3 => Biome::Sand,
+        4 => Biome::Desert,
+        5 => Biome::Mountain,
+        _ => Biome::Empty,
+    }
+}
+
+impl Biome {
+    fn get_biome_material(&self) -> Color {
+        match self {
+            Biome::Grassland => Color::GREEN,
+            Biome::Forest => Color::DARK_GREEN,
+            Biome::Ocean => Color::MIDNIGHT_BLUE,
+            Biome::Sand => Color::BEIGE,
+            Biome::Desert => Color::YELLOW,
+            Biome::Mountain => Color::SILVER,
+            Biome::Empty => Color::PURPLE,
+        }
+    }
 }
