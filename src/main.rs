@@ -84,46 +84,6 @@ fn setup(
 
     for z in -10..10 {
         for x in -10..10 {
-            let mut image = Image {
-                texture_descriptor: TextureDescriptor {
-                    label: None,
-                    size,
-                    dimension: TextureDimension::D2,
-                    format: TextureFormat::Bgra8UnormSrgb,
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    usage: TextureUsages::TEXTURE_BINDING
-                        | TextureUsages::COPY_DST
-                        | TextureUsages::RENDER_ATTACHMENT,
-                    view_formats: &[],
-                },
-                ..default()
-            };
-            //image = uv_debug_texture();
-            // fill image.data with zeroes
-            image.resize(size);
-
-            let image_handle = images.add(image);
-            let texture_camera = commands
-                .spawn(Camera2dBundle {
-                    camera: Camera {
-                        // render before the "main pass" camera
-                        order: -1,
-                        target: RenderTarget::Image(image_handle.clone()),
-                        clear_color: ClearColorConfig::Custom(Color::GOLD),
-                        ..default()
-                    },
-                    ..default()
-                })
-                .id();
-
-            let material_handle = materials.add(StandardMaterial {
-                base_color_texture: Some(image_handle),
-                reflectance: 0.02,
-                unlit: false,
-                alpha_mode:AlphaMode::Mask(0.5),
-                ..default()
-            });
             let position = vec3(
                 (x as f32 + z as f32 * 0.5 - (z / 2) as f32) * (HEX_INNER_RADIUS * 2.0),
                 0.0,
@@ -133,10 +93,7 @@ fn setup(
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
-                    material: materials.add(StandardMaterial {
-                                    base_color_texture: Some(images.add(uv_debug_texture())),
-                                    ..default()
-                                }),
+                    material: debug_material.clone(),
                     transform: Transform::from_xyz(position.x, position.y, position.z)
                         .with_rotation(Quat::from_rotation_x(0.0)),
                     ..default()
@@ -147,66 +104,11 @@ fn setup(
                     color: Color::SILVER,
                 },
             ));
-            // commands.spawn((
-            //     PbrBundle {
-            //         mesh: shape.clone(),
-            //         material: materials.add(StandardMaterial {
-            //             base_color_texture: Some(images.add(uv_debug_texture())),
-            //             ..default()
-            //         }),
-            //         transform: Transform::from_xyz(position.x, position.y, position.z)
-            //             .with_rotation(Quat::from_rotation_x(0.0)),
-            //         ..default()
-            //     },
-            //     Hex {
-            //         position: { position },
-            //         index: { index },
-            //         color: Color::SILVER,
-            //     },
-            // ));
-            commands
-            .spawn((
-                NodeBundle {
-                    style: Style {
-                        // Cover the whole image
-                        width: Val::Percent(100.),
-                        height: Val::Percent(100.),
-                        flex_direction: FlexDirection::Column,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    background_color: BackgroundColor(Color::Rgba { red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0 }),
-                    ..default()
-                },
-                TargetCamera(texture_camera),
-            ))
-            .with_children(|parent| {
-                parent.spawn(TextBundle::from_section(
-                    "This is a cube",
-                    TextStyle {
-                        font_size: 40.0,
-                        color: Color::BLACK,
-                        ..default()
-                    },
-                ));
-            });
-            
-            // commands.spawn(
-            //     PbrBundle {
-            //         mesh: meshes.add(Cuboid::new(HEX_INNER_RADIUS, 0.1, HEX_INNER_RADIUS)),
-            //         material:material_handle,
-            //         ..default()
 
-            //     }
-            // );
             commands.spawn(
                 PbrBundle {
                     mesh: meshes.add(Cuboid::new(HEX_INNER_RADIUS, 0.1, HEX_INNER_RADIUS)),
-                    material: materials.add(StandardMaterial {
-                                    base_color_texture: Some(images.add(uv_debug_texture())),
-                                    ..default()
-                                }),
+                    material: debug_material.clone(),
                     ..default()
 
                 }
