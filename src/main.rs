@@ -104,7 +104,8 @@ fn setup(
             commands.spawn((
                 PbrBundle {
                     mesh: shape.clone(),
-                    material: materials.add(new_biome.get_biome_material()),
+                    //material: materials.add(new_biome.get_biome_material()),
+                    material: debug_material.clone(),
                     transform: Transform::from_xyz(position.x, position.y, position.z)
                         .with_rotation(Quat::from_rotation_x(0.0)),
                     ..default()
@@ -128,7 +129,7 @@ fn setup(
 }
 
 fn create_hex_mesh() -> Mesh {
-    let opposite_leg:f32 = ((PI / 6.0).sin() * HEX_INNER_RADIUS) / HEX_OUTER_RADIUS;
+    let opposite_leg:f32 = ((PI / 6.0).tan() * HEX_INNER_RADIUS) ;
     print!("{}, {}, {}",opposite_leg, 0.5 - opposite_leg, 0.5 + opposite_leg);
     Mesh::new(
         PrimitiveTopology::TriangleList,
